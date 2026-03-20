@@ -26,90 +26,83 @@ class Reservation {
     public String getRoomType() {
         return roomType;
     }
-}
 
-/**
- * Add-On Service (Optional Feature)
- */
-class AddOnService {
-
-    private String serviceName;
-    private double price;
-
-    public AddOnService(String serviceName, double price) {
-        this.serviceName = serviceName;
-        this.price = price;
-    }
-
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    public double getPrice() {
-        return price;
-    }
-
-    public void displayService() {
-        System.out.println(serviceName + " ($" + price + ")");
+    public void display() {
+        System.out.println("ID: " + reservationId +
+                " | Guest: " + guestName +
+                " | Room: " + roomType);
     }
 }
 
 /**
- * Add-On Service Manager
+ * Booking History (Stores confirmed reservations)
  */
-class AddOnServiceManager {
+class BookingHistory {
 
-    // Map: Reservation ID → List of Services
-    private Map<String, List<AddOnService>> serviceMap = new HashMap<>();
+    // Maintains insertion order
+    private List<Reservation> history = new ArrayList<>();
 
     /**
-     * Add service to reservation
+     * Add confirmed reservation
      */
-    public void addService(String reservationId, AddOnService service) {
-
-        serviceMap
-                .computeIfAbsent(reservationId, k -> new ArrayList<>())
-                .add(service);
-
-        System.out.println("Service added: " + service.getServiceName() +
-                " → Reservation ID: " + reservationId);
+    public void addReservation(Reservation reservation) {
+        history.add(reservation);
     }
 
     /**
-     * Display services for a reservation
+     * Get all reservations
      */
-    public void displayServices(String reservationId) {
-
-        List<AddOnService> services = serviceMap.get(reservationId);
-
-        if (services == null || services.isEmpty()) {
-            System.out.println("No add-on services for Reservation: " + reservationId);
-            return;
-        }
-
-        System.out.println("\nServices for Reservation " + reservationId + ":");
-
-        for (AddOnService service : services) {
-            service.displayService();
-        }
+    public List<Reservation> getAllReservations() {
+        return history;
     }
 
     /**
-     * Calculate total add-on cost
+     * Display full history
      */
-    public double calculateTotalCost(String reservationId) {
+    public void displayHistory() {
+        System.out.println("\nBooking History (Chronological Order):\n");
 
-        List<AddOnService> services = serviceMap.get(reservationId);
+        for (Reservation r : history) {
+            r.display();
+        }
+    }
+}
 
-        if (services == null) return 0;
+/**
+ * Booking Report Service
+ */
+class BookingReportService {
 
-        double total = 0;
+    private BookingHistory history;
 
-        for (AddOnService s : services) {
-            total += s.getPrice();
+    public BookingReportService(BookingHistory history) {
+        this.history = history;
+    }
+
+    /**
+     * Generate summary report
+     */
+    public void generateSummaryReport() {
+
+        List<Reservation> reservations = history.getAllReservations();
+
+        System.out.println("\n===== Booking Summary Report =====");
+
+        System.out.println("Total Bookings: " + reservations.size());
+
+        // Count by room type
+        Map<String, Integer> roomCount = new HashMap<>();
+
+        for (Reservation r : reservations) {
+            String type = r.getRoomType();
+            roomCount.put(type, roomCount.getOrDefault(type, 0) + 1);
         }
 
-        return total;
+        System.out.println("\nBookings by Room Type:");
+
+        for (Map.Entry<String, Integer> entry : roomCount.entrySet()) {
+            System.out.println(entry.getKey() + " → " + entry.getValue());
+        }
     }
 }
 
@@ -122,39 +115,28 @@ public class BookMyStayApp {
 
         System.out.println("===== Book My Stay App =====\n");
 
-        // Simulated confirmed reservations (from Use Case 6)
+        // Booking History
+        BookingHistory history = new BookingHistory();
+
+        // Simulated confirmed bookings (from Use Case 6)
         Reservation r1 = new Reservation("R101", "Alice", "Single Room");
         Reservation r2 = new Reservation("R102", "Bob", "Double Room");
+        Reservation r3 = new Reservation("R103", "Charlie", "Single Room");
 
-        // Add-On Services
-        AddOnService wifi = new AddOnService("WiFi", 10);
-        AddOnService breakfast = new AddOnService("Breakfast", 15);
-        AddOnService parking = new AddOnService("Parking", 20);
+        // Add to history
+        history.addReservation(r1);
+        history.addReservation(r2);
+        history.addReservation(r3);
 
-        // Service Manager
-        AddOnServiceManager manager = new AddOnServiceManager();
+        // Admin views booking history
+        history.displayHistory();
 
-        // Guest selects services
-        System.out.println("Adding services...\n");
+        // Reporting Service
+        BookingReportService reportService = new BookingReportService(history);
 
-        manager.addService(r1.getReservationId(), wifi);
-        manager.addService(r1.getReservationId(), breakfast);
+        // Generate report
+        reportService.generateSummaryReport();
 
-        manager.addService(r2.getReservationId(), parking);
-
-        // Display services
-        manager.displayServices(r1.getReservationId());
-        manager.displayServices(r2.getReservationId());
-
-        // Calculate cost
-        System.out.println("\nTotal Add-On Cost:");
-
-        System.out.println("Reservation " + r1.getReservationId() +
-                " → $" + manager.calculateTotalCost(r1.getReservationId()));
-
-        System.out.println("Reservation " + r2.getReservationId() +
-                " → $" + manager.calculateTotalCost(r2.getReservationId()));
-
-        System.out.println("\nCore booking & inventory remain unchanged.");
+        System.out.println("\nReports generated without modifying booking data.");
     }
 }
